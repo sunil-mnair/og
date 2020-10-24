@@ -20,13 +20,13 @@ app = Flask(__name__)
 project_dir = os.path.dirname(os.path.abspath(__file__))
 database_file = "sqlite:///{}".format(os.path.join(project_dir, "sample.db"))
 
-app.config['SECRET_KEY'] = 'trendzsalon'
+app.config['SECRET_KEY'] = 'secretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = database_file
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# engine = create_engine("sqlite:///{}".format(os.path.join(project_dir, "penrose.db")), echo=True)
+# engine = create_engine("sqlite:///{}".format(os.path.join(project_dir, "sample.db")), echo=True)
 
 # Base.metadata.create_all(engine)
 
