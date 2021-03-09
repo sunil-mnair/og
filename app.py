@@ -1,5 +1,5 @@
-import os
-from flask import Flask,render_template,request, redirect,url_for,Response,jsonify,flash,send_file
+import os,json
+from flask import Flask,render_template,request, redirect,url_for,Response,jsonify,flash,send_file,session
 from flask_sqlalchemy import SQLAlchemy
 
 from flask_login import LoginManager,login_required, login_user,logout_user,current_user
@@ -106,7 +106,29 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/')
+@app.route('/',methods=['GET','POST'])
 @login_required
 def index():
-    return render_template("index.html")
+
+    # read json file
+    with open('tasks.json') as file:
+        tasks_db = json.load(file)
+        session["pending"] = [t for t in tasks_db if t['status'] == 0]
+        
+        print(session["pending"])
+    
+    if request.method == 'POST':
+        completed = request.form.getlist('task')
+
+        for p in session["pending"]:
+            if p["title"] in completed:
+                p["status"] = 1
+
+        with open('tasks.json','w') as file:
+            json.dump(session["pending"],file,indent = 4)
+
+        with open('tasks.json') as file:
+            tasks_db = json.load(file)
+            session["pending"] = [t for t in tasks_db if t['status'] == 0]
+
+    return render_template("index.html",tasks = session["pending"])
