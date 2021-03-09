@@ -6,6 +6,13 @@
     <title>Blank Page</title>
 </head>
 <body>
-    Test Success
+    <form method="post" action="/">
+    <ul>
+    {% for task in tasks %}
+    <li><input type="checkbox" name="task" value="{{ task['title'] }}">{{ task["title"] }}</li>
+    {% endfor %}
+</ul>
+<input type="submit" value="Completed"/>
+    </form>
 </body>
 </html>
