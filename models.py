@@ -53,11 +53,24 @@ class RoomOccupancy(db.Model):
     def __repr__(self):
         return f'{self.id}-{self.checkIn}'
 
+class CostMaster(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    costType = db.Column(db.String(100))
+
+    created_dt = db.Column(db.DateTime, nullable = True,
+    default = datetime.now(localtz))
+    modified_dt = db.Column(db.DateTime, nullable = True,
+    default = datetime.now(localtz))
+
+    def __repr__(self):
+        return str(self.costType)
 
 class OperatingCosts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    costID = db.Column(db.Integer,db.ForeignKey('cost_master.id'))
+
     date = db.Column(db.DateTime)
-    costType = db.Column(db.String(100))
+    
     costDescription = db.Column(db.Text)
     amount = db.Column(db.Integer)
 
@@ -66,8 +79,13 @@ class OperatingCosts(db.Model):
     modified_dt = db.Column(db.DateTime, nullable = True,
     default = datetime.now(localtz))
 
+    cost_master = db.relationship('CostMaster', backref=db.backref('operating_costs', lazy='dynamic'))
+
     def __repr__(self):
         return str(self.id)
+
+
+
 
 class AllModelView(ModelView):
     can_delete = False
@@ -158,6 +176,10 @@ class RoomOccupancyView(ModelView):
     }
     }
 
+    column_sortable_list = ['id','checkIn','amount','guests']
+    #column_default_sort = [('checkIn',True)]
+    
+
 #     form_ajax_refs = {
 #     'room_master': {
 #         'fields': ['roomName'],
@@ -176,18 +198,21 @@ class OperatingCostsView(ModelView):
 
     can_delete = True
     page_size = 25
-    column_searchable_list = ['id','costType']
-    column_filters = ['id','costType']
+    column_searchable_list = ['id','costDescription']
+    column_filters = ['id','costDescription']
     column_hide_backrefs = False
 
-    column_list = ['id','costType','costDescription','amount']
+    column_list = ['id','date','cost_master','costDescription','amount']
 
     column_labels = {
     'id': 'No.',
-    'costType': 'Cost Type',
+    'cost_master': 'Cost Type',
     'costDescription': 'Cost Description',
     'amount': 'Amount (£)'
     }
+
+    column_sortable_list = ['id','date','amount']
+    column_default_sort = [('id',True)]
     
     form_excluded_columns = ['created_dt', 'modified_dt']
 
