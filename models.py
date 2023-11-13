@@ -132,7 +132,7 @@ class RoomOccupancyView(ModelView):
     can_export = True
 
     page_size = 25
-    column_searchable_list = ['id','roomNumber','checkIn','checkOut','mainGuestName','amount']
+    column_searchable_list = ['mainGuestName','amount']
     column_filters = ['id','roomNumber','checkIn','checkOut','mainGuestName','amount']
     column_hide_backrefs = False
 
