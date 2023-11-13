@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from flask_login import LoginManager,login_required, login_user,logout_user,current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_admin import Admin,AdminIndexView
+from flask_admin import Admin,AdminIndexView,BaseView
 from flask_admin.contrib.sqla import ModelView
 
 from datetime import *
@@ -43,12 +43,15 @@ def load_user(user_id):
 # since the user_id is just the primary key of our user table, use it in the query for the user
     return User.query.get(int(user_id))
 
-admin = Admin(app,index_view=MainAdminIndexView(),name="Oakland GuestHouse",template_mode='bootstrap3')
+admin = Admin(app,index_view=MainAdminIndexView(),name="Oaklands GuestHouse",template_mode='bootstrap3')
 
+admin.add_view(CustomView(name='Dashboard', endpoint='analytics'))
 admin.add_view(RoomOccupancyView(RoomOccupancy,db.session))
 admin.add_view(OperatingCostsView(OperatingCosts,db.session))
 admin.add_view(RoomMasterView(RoomMaster,db.session))
 admin.add_view(AllModelView(User,db.session))
+
+
 
 @app.route('/login',methods=['GET','POST'])
 def login():
@@ -115,26 +118,4 @@ def logout():
 @app.route('/',methods=['GET','POST'])
 @login_required
 def index():
-
-    # read json file
-    with open('tasks.json') as file:
-        tasks_db = json.load(file)
-        session["pending"] = [t for t in tasks_db if t['status'] == 0]
-        
-        print(session["pending"])
-    
-    if request.method == 'POST':
-        completed = request.form.getlist('task')
-
-        for p in session["pending"]:
-            if p["title"] in completed:
-                p["status"] = 1
-
-        with open('tasks.json','w') as file:
-            json.dump(session["pending"],file,indent = 4)
-
-        with open('tasks.json') as file:
-            tasks_db = json.load(file)
-            session["pending"] = [t for t in tasks_db if t['status'] == 0]
-
-    return render_template("index.html",tasks = session["pending"])
+    return redirect(url_for('admin.index'))

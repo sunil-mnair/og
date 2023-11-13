@@ -4,7 +4,7 @@ from pytz import timezone
 localtz = timezone('GMT+0')
 
 from flask_login import UserMixin,current_user,login_user,logout_user
-from flask_admin import Admin,AdminIndexView
+from flask_admin import Admin,AdminIndexView,BaseView,expose
 from flask_admin.contrib.sqla import ModelView
 
 from flask import url_for,redirect,request
@@ -20,7 +20,7 @@ class User(UserMixin,db.Model):
 class RoomMaster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     roomName = db.Column(db.String(100), unique=True)
-    roomType = db.Column(db.String(10), unique=True)
+    roomType = db.Column(db.String(10))
     maxRevenue = db.Column(db.Integer)
 
     created_dt = db.Column(db.DateTime, nullable = True,
@@ -33,9 +33,7 @@ class RoomMaster(db.Model):
 
 class RoomOccupancy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    
     roomNumber = db.Column(db.Integer,db.ForeignKey('room_master.id'))
-    roomMaster = db.relationship('RoomMaster', backref=db.backref('room_occupancy', lazy='dynamic'))
 
     checkIn = db.Column(db.DateTime)
     checkOut = db.Column(db.DateTime)
@@ -50,9 +48,10 @@ class RoomOccupancy(db.Model):
     modified_dt = db.Column(db.DateTime, nullable = True,
     default = datetime.now(localtz))
 
+    room_master = db.relationship('RoomMaster', backref=db.backref('room_occupancy', lazy='dynamic'))
+
     def __repr__(self):
         return f'{self.id}-{self.checkIn}'
-
 
 
 class OperatingCosts(db.Model):
@@ -89,6 +88,7 @@ class AllModelView(ModelView):
 class RoomMasterView(ModelView):
 
     can_delete = False
+    can_edit = True
     page_size = 7
     column_searchable_list = ['id','roomName']
     column_filters = ['id','roomName']
@@ -97,7 +97,6 @@ class RoomMasterView(ModelView):
     column_list = ['id','roomName','roomType','maxRevenue']
 
     column_labels = {
-    'id': 'No.',
     'roomName': 'Room Name',
     'roomType': 'Room Type',
     'maxRevenue': 'Daily Max Revenue (£)'
@@ -106,8 +105,8 @@ class RoomMasterView(ModelView):
     form_excluded_columns = ['created_dt', 'modified_dt']
 
     # With Model View, it does not show Rich Text Editor
-    # create_modal = True
-    # edit_modal = True
+    create_modal = True
+    edit_modal = True
 
     form_args = {
     'roomName': {
@@ -117,7 +116,7 @@ class RoomMasterView(ModelView):
         'label': 'Room Type'
     },
     'maxRevenue': {
-        'label': 'Max Daily Revenue'
+        'label': 'Daily Max Revenue (£)'
     }
     }
 
@@ -130,16 +129,19 @@ class RoomMasterView(ModelView):
 class RoomOccupancyView(ModelView):
 
     can_delete = True
+    can_export = True
+
     page_size = 25
-    column_searchable_list = ['id','checkIn','checkOut','mainGuestName','amount']
-    column_filters = ['id','checkIn','checkOut','mainGuestName','amount']
+    column_searchable_list = ['id','roomNumber','checkIn','checkOut','mainGuestName','amount']
+    column_filters = ['id','roomNumber','checkIn','checkOut','mainGuestName','amount']
     column_hide_backrefs = False
 
-    column_list = ['id','roomNumber','checkIn','checkOut','amount','mainGuestName','guests']
+    # 'room' used because thats the name of the backref
+    column_list = ['id','room_master','checkIn','checkOut','amount','guests','mainGuestName']
 
     column_labels = {
     'id': 'ID',
-    'roomNumber': 'Room',
+    'room_master': 'Room',
     'amount': 'Revenue (£)',
     'mainGuestName': 'Main Guest Name'
     }
@@ -147,14 +149,22 @@ class RoomOccupancyView(ModelView):
     form_excluded_columns = ['created_dt', 'modified_dt']
 
     # With Model View, it does not show Rich Text Editor
-    # create_modal = True
-    # edit_modal = True
+    create_modal = True
+    edit_modal = True
 
     form_args = {
-    'roomMaster': {
+    'roomNumber': {
         'label': 'Room'
     }
     }
+
+#     form_ajax_refs = {
+#     'room_master': {
+#         'fields': ['roomName'],
+#         'page_size': 10
+#     }
+# }
+
 
     def is_accessible(self):
         return current_user.is_authenticated
@@ -192,6 +202,10 @@ class OperatingCostsView(ModelView):
     def inaccessible_callback(self,name,**kwargs):
         return redirect(url_for('login'))
 
+class CustomView(BaseView):
+    @expose('/')
+    def index(self):
+        return self.render('dashboard.html')
 
 
 
